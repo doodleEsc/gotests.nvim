@@ -24,6 +24,7 @@ local run = function(setup, extra)
 		else
 			vim.notify("All test function generated in "..extra.test_gofile)
 		end
+		vim.cmd("edit " .. extra.test_gocwd .. "/" .. extra.test_gofile)
 	end
   })
 end
@@ -39,7 +40,7 @@ local get_test_gofile = function(gofile)
 	return test_filename
 end
 
-local extra_info = function(gofile, funame)
+local extra_info = function(gocwd, gofile, funame)
 	local extra = {}
 	local test_gofile = get_test_gofile(gofile)
 
@@ -48,6 +49,7 @@ local extra_info = function(gofile, funame)
 		test_func = "Test" .. funame
 	end
 
+	extra.test_gocwd = gocwd
 	extra.test_gofile = test_gofile
 	extra.test_funame = test_func
 	return extra
@@ -88,9 +90,11 @@ ut.fun_test = function(parallel)
 
   local funame = ns.name
   local gofile = vim.fn.expand("%")
-  local extra = extra_info(gofile, funame)
+  local gocwd = vim.fn.expand("%:p:h")
 
+  local extra = extra_info(gocwd, gofile, funame)
   local args = { "gotests", "-w", "-only", funame, gofile }
+
   if parallel then
     table.insert(args, "-parallel")
   end
@@ -99,9 +103,13 @@ end
 
 ut.all_test = function(parallel)
   parallel = parallel or false
+
   local gofile = vim.fn.expand("%")
-  local extra = extra_info(gofile)
+  local gocwd = vim.fn.expand("%:p:h")
+
+  local extra = extra_info(gocwd, gofile)
   local args = { "gotests", "-all", "-w", gofile }
+
   if parallel then
     table.insert(args, "-parallel")
   end
@@ -110,9 +118,13 @@ end
 
 ut.exported_test = function(parallel)
   parallel = parallel or false
+
   local gofile = vim.fn.expand("%")
-  local extra = extra_info(gofile)
+  local gocwd = vim.fn.expand("%:p:h")
+
+  local extra = extra_info(gocwd, gofile)
   local args = { "gotests", "-exported", "-w", gofile }
+
   if parallel then
     table.insert(args, "-parallel")
   end
