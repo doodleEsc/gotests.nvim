@@ -24,6 +24,17 @@ local run = function(setup)
   })
 end
 
+local get_test_filename = function(gofile)
+	if type(gofile) ~= "string" then
+		vim.notify("Invalid File Type", "error")
+		return
+	end
+	local sep = require("gotests.utils").sep()
+	local results = require("gotests.utils").split(gofile, sep)
+	local test_filename = results[#results]:gsub(".", "_test.")
+	return test_filename
+end
+
 local add_test = function(args)
   require("gotests.install").install("gotests")
 
@@ -60,6 +71,8 @@ ut.fun_test = function(parallel)
   local funame = ns.name
   -- local rs, re = ns.dim.s.r, ns.dim.e.r
   local gofile = vim.fn.expand("%")
+  test_gofile = get_test_filename(gofile)
+  vim.notify(test_gofile)
   local args = { "gotests", "-w", "-only", funame, gofile }
   if parallel then
     table.insert(args, "-parallel")

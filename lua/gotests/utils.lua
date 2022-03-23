@@ -471,4 +471,12 @@ function util.read_file(path)
   return content
 end
 
+function util.split(str, delimiter)
+	local result = {};
+	for match in (str..delimiter):gmatch("(.-)"..delimiter) do
+		table.insert(result, match);
+	end
+	return result;
+end
+
 return util
