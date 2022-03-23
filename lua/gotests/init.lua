@@ -31,7 +31,7 @@ local get_test_filename = function(gofile)
 	end
 	local sep = require("gotests.utils").sep()
 	local results = require("gotests.utils").split(gofile, sep)
-	local test_filename = results[#results]:gsub(".", "_test.")
+	local test_filename = results[#results]:gsub("\.", "_test.")
 	return test_filename
 end
 
