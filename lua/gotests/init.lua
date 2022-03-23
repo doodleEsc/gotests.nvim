@@ -89,7 +89,7 @@ end
 
 ut.setup = function(cfg)
 	cfg = cfg or {}
-	ut._GO_NVIM_CFG = vim.tbl_extend("force", ut._GO_NVIM_CFG, cfg)
+	ut.GO_NVIM_CFG = vim.tbl_extend("force", ut.GO_NVIM_CFG, cfg)
 end
 
 return ut
