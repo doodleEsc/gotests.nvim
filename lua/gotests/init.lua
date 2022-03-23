@@ -19,12 +19,13 @@ local run = function(setup, extra)
       -- print("generate tests finished with message: " .. vim.inspect(setup) .. "error: " .. vim.inspect(data))
     end,
 	on_exit = function(_, data, _)
+		vim.cmd("edit " .. extra.test_gocwd .. "/" .. extra.test_gofile)
 		if extra.test_funame ~= nil then
 			vim.notify("`"..extra.test_funame.."`".." generated in "..extra.test_gofile)
+			vim.fn.search(extra.test_funame)
 		else
 			vim.notify("All test function generated in "..extra.test_gofile)
 		end
-		vim.cmd("edit " .. extra.test_gocwd .. "/" .. extra.test_gofile)
 	end
   })
 end
