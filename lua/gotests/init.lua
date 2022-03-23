@@ -10,32 +10,50 @@ ut.GO_NVIM_CFG = {
 	verbose = true,
 }
 
-local run = function(setup)
+local run = function(setup, extra)
   local j = vim.fn.jobstart(setup, {
     on_stdout = function(jobid, data, event)
-      print("unit tests generate " .. vim.inspect(data))
+      -- print("unit tests generate " .. vim.inspect(data))
     end,
     on_stderr = function(_, data, _)
-      print("generate tests finished with message: " .. vim.inspect(setup) .. "error: " .. vim.inspect(data))
+      -- print("generate tests finished with message: " .. vim.inspect(setup) .. "error: " .. vim.inspect(data))
     end,
 	on_exit = function(_, data, _)
-		print(vim.inspect(setup))
+		if extra.test_funame ~= nil then
+			vim.notify("`"..extra.test_funame.."`".." generated in "..extra.test_gofile)
+		else
+			vim.notify("All test function generated in "..extra.test_gofile)
+		end
 	end
   })
 end
 
-local get_test_filename = function(gofile)
+local get_test_gofile = function(gofile)
 	if type(gofile) ~= "string" then
 		vim.notify("Invalid File Type", "error")
 		return
 	end
 	local sep = require("gotests.utils").sep()
 	local results = require("gotests.utils").split(gofile, sep)
-	local test_filename = results[#results]:gsub("\.", "_test.")
+	local test_filename = results[#results]:gsub("%.", "_test.")
 	return test_filename
 end
 
-local add_test = function(args)
+local extra_info = function(gofile, funame)
+	local extra = {}
+	local test_gofile = get_test_gofile(gofile)
+
+	local test_func = nil
+	if type(funame) == "string" and #funame ~= 0 then
+		test_func = "Test" .. funame
+	end
+
+	extra.test_gofile = test_gofile
+	extra.test_funame = test_func
+	return extra
+end
+
+local add_test = function(args, extra)
   require("gotests.install").install("gotests")
 
   local test_template = ut.GO_NVIM_CFG.test_template or ""
@@ -56,7 +74,7 @@ local add_test = function(args)
     return
   end
 
-  run(args)
+  run(args, extra)
 end
 
 ut.fun_test = function(parallel)
@@ -69,35 +87,36 @@ ut.fun_test = function(parallel)
   end
 
   local funame = ns.name
-  -- local rs, re = ns.dim.s.r, ns.dim.e.r
   local gofile = vim.fn.expand("%")
-  test_gofile = get_test_filename(gofile)
-  vim.notify(test_gofile)
+  local extra = extra_info(gofile, funame)
+
   local args = { "gotests", "-w", "-only", funame, gofile }
   if parallel then
     table.insert(args, "-parallel")
   end
-  add_test(args)
+  add_test(args, extra)
 end
 
 ut.all_test = function(parallel)
   parallel = parallel or false
   local gofile = vim.fn.expand("%")
+  local extra = extra_info(gofile)
   local args = { "gotests", "-all", "-w", gofile }
   if parallel then
     table.insert(args, "-parallel")
   end
-  add_test(args)
+  add_test(args, extra)
 end
 
 ut.exported_test = function(parallel)
   parallel = parallel or false
   local gofile = vim.fn.expand("%")
+  local extra = extra_info(gofile)
   local args = { "gotests", "-exported", "-w", gofile }
   if parallel then
     table.insert(args, "-parallel")
   end
-  add_test(args)
+  add_test(args, extra)
 end
 
 ut.setup = function(cfg)
