@@ -47,7 +47,11 @@ local extra_info = function(gocwd, gofile, funame)
 
 	local test_func = nil
 	if type(funame) == "string" and #funame ~= 0 then
-		test_func = "Test" .. funame
+		if string.match(funame[1], "%u") then
+			test_func = "Test" .. funame
+		else
+			test_func = "Test_" .. funame
+		end
 	end
 
 	extra.test_gocwd = gocwd
