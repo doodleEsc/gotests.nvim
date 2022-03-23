@@ -8,7 +8,6 @@ ut.GO_NVIM_CFG = {
 	test_template = "",
 	test_template_dir = "",
 	verbose = true,
-
 }
 
 local run = function(setup)
@@ -86,6 +85,11 @@ ut.exported_test = function(parallel)
     table.insert(args, "-parallel")
   end
   add_test(args)
+end
+
+ut.setup = function(cfg)
+	cfg = cfg or {}
+	ut._GO_NVIM_CFG = vim.tbl_extend("force", ut._GO_NVIM_CFG, cfg)
 end
 
 return ut
