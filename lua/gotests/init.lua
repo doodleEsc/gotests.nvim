@@ -2,6 +2,7 @@
 -- https://github.com/cweill/gotests
 
 local ut = {}
+local gotests = "gotests"
 local empty = require("gotests.utils").empty
 
 ut.GO_NVIM_CFG = {
@@ -41,51 +42,40 @@ local get_test_gofile = function(gofile)
 	return test_filename
 end
 
-local extra_info = function(gocwd, gofile, funame)
+local new_gotests_extra = function()
 	local extra = {}
-	local test_gofile = get_test_gofile(gofile)
-
-	local test_func = nil
-	if type(funame) == "string" and #funame ~= 0 then
-		if string.match(string.sub(funame, 1, 1), "%u") then
-			test_func = "Test" .. funame
-		else
-			test_func = "Test_" .. funame
-		end
-	end
-
-	extra.test_gocwd = gocwd
-	extra.test_gofile = test_gofile
-	extra.test_funame = test_func
+	extra.test_gocwd = vim.fn.expand("%:p:h")
+	extra.test_gofile = get_test_gofile(vim.fn.expand("%"))
 	return extra
 end
 
-local add_test = function(args, extra)
-  require("gotests.install").install("gotests")
-
+local new_gotests_args = function(parallel)
   local test_template = ut.GO_NVIM_CFG.test_template or ""
   local test_template_dir = ut.GO_NVIM_CFG.test_template_dir or ""
-
-  if string.len(test_template) > 1 then
+  local args = { gotests }
+  if parallel then
+    table.insert(args, "-parallel")
+  end
+  if string.len(test_template) > 0 then
     table.insert(args, "-template")
     table.insert(args, test_template)
-    if string.len(test_template_dir) > 1 then
+    if string.len(test_template_dir) > 0 then
       table.insert(args, "-template_dir")
       table.insert(args, test_template_dir)
     end
   end
-  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-  row, col = row + 1, col + 1
-  local ns = require("gotests.ts.go").get_func_method_node_at_pos(row, col)
-  if empty(ns) then
-    return
-  end
+  return args
+end
 
+local add_test = function(args, extra)
+  require("gotests.install").install("gotests")
+  local gofile = vim.fn.expand("%")
+  table.insert(args, "-w")
+  table.insert(args, gofile)
   run(args, extra)
 end
 
 ut.fun_test = function(parallel)
-  parallel = parallel or false
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
   row, col = row + 1, col + 1
   local ns = require("gotests.ts.go").get_func_method_node_at_pos(row, col)
@@ -94,45 +84,35 @@ ut.fun_test = function(parallel)
   end
 
   local funame = ns.name
-  local gofile = vim.fn.expand("%")
-  local gocwd = vim.fn.expand("%:p:h")
+  local args = new_gotests_args(parallel)
+  table.insert(args, "-only")
+  table.insert(args, funame)
 
-  local extra = extra_info(gocwd, gofile, funame)
-  local args = { "gotests", "-w", "-only", funame, gofile }
-
-  if parallel then
-    table.insert(args, "-parallel")
+  local extra = new_gotests_extra()
+  if type(funame) == "string" and #funame ~= 0 then
+  	if string.match(string.sub(funame, 1, 1), "%u") then
+		extra["test_func"] = "Test" .. funame
+  	else
+		extra["test_func"] = "Test_" .. funame
+  	end
   end
+
   add_test(args, extra)
 end
 
 ut.all_test = function(parallel)
-  parallel = parallel or false
+  local args = new_gotests_args(parallel)
+  local extra = new_gotests_extra()
 
-  local gofile = vim.fn.expand("%")
-  local gocwd = vim.fn.expand("%:p:h")
-
-  local extra = extra_info(gocwd, gofile)
-  local args = { "gotests", "-all", "-w", gofile }
-
-  if parallel then
-    table.insert(args, "-parallel")
-  end
+  table.insert(args, "-all")
   add_test(args, extra)
 end
 
 ut.exported_test = function(parallel)
-  parallel = parallel or false
+  local args = new_gotests_args(parallel)
+  local extra = new_gotests_extra()
 
-  local gofile = vim.fn.expand("%")
-  local gocwd = vim.fn.expand("%:p:h")
-
-  local extra = extra_info(gocwd, gofile)
-  local args = { "gotests", "-exported", "-w", gofile }
-
-  if parallel then
-    table.insert(args, "-parallel")
-  end
+  table.insert(args, "-exported")
   add_test(args, extra)
 end
 
