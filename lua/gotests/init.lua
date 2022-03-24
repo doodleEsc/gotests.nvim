@@ -91,9 +91,9 @@ ut.fun_test = function(parallel)
   local extra = new_gotests_extra()
   if type(funame) == "string" and #funame ~= 0 then
   	if string.match(string.sub(funame, 1, 1), "%u") then
-		extra["test_func"] = "Test" .. funame
+		extra["test_funame"] = "Test" .. funame
   	else
-		extra["test_func"] = "Test_" .. funame
+		extra["test_funame"] = "Test_" .. funame
   	end
   end
 
