@@ -84,9 +84,10 @@ ut.fun_test = function(parallel)
   end
 
   local funame = ns.name
+  local funame_regx = "^" .. ns.name .. "$"
   local args = new_gotests_args(parallel)
   table.insert(args, "-only")
-  table.insert(args, funame)
+  table.insert(args, funame_regx)
 
   local extra = new_gotests_extra()
   if type(funame) == "string" and #funame ~= 0 then
