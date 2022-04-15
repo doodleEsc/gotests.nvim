@@ -4,42 +4,47 @@
 local ut = {}
 local gotests = "gotests"
 local empty = require("gotests.utils").empty
+local Job = require("plenary.job")
 
 ut.GO_NVIM_CFG = {
-	test_template = "",
-	test_template_dir = "",
-	verbose = true,
+  test_template = "",
+  test_template_dir = "",
+  verbose = true,
 }
 
-local run = function(setup, extra)
-  local j = vim.fn.jobstart(setup, {
-    on_stdout = function(jobid, data, event)
-      -- print("unit tests generate " .. vim.inspect(data))
-    end,
-    on_stderr = function(_, data, _)
-      -- print("generate tests finished with message: " .. vim.inspect(setup) .. "error: " .. vim.inspect(data))
-    end,
-	on_exit = function(_, data, _)
-		vim.cmd("edit " .. extra.test_gocwd .. "/" .. extra.test_gofile)
-		if extra.test_funame ~= nil then
-			vim.notify("`"..extra.test_funame.."`".." generated in "..extra.test_gofile)
-			vim.fn.search(extra.test_funame)
-		else
-			vim.notify("All test function generated in "..extra.test_gofile)
-		end
-	end
-  })
+local run = function(args, extra)
+  Job:new({
+    command = gotests,
+    args = args,
+    on_exit = function(j, return_val)
+      if return_val == 0 then
+        if extra.test_funame ~= nil then
+          vim.notify("`"..extra.test_funame.."`".." generated in "..extra.test_gofile)
+        else
+          vim.notify("All test function generated in "..extra.test_gofile)
+        end
+        vim.schedule(function()
+          vim.cmd("edit " .. extra.test_gocwd .. "/" .. extra.test_gofile)
+          if extra.test_funame ~= nil then
+            vim.fn.search(extra.test_funame)
+          end
+        end)
+      else
+        vim.notify(j:result()[1], vim.log.levels.ERROR)
+      end
+    end
+  }):start()
 end
 
 local get_test_gofile = function(gofile)
-	if type(gofile) ~= "string" then
-		vim.notify("Invalid File Type", "error")
-		return
-	end
-	local sep = require("gotests.utils").sep()
-	local results = require("gotests.utils").split(gofile, sep)
-	local test_filename = results[#results]:gsub("%.", "_test.")
-	return test_filename
+  if type(gofile) ~= "string" then
+    vim.notify("Invalid File Type", "error")
+    return
+  end
+  local sep = require("gotests.utils").sep()
+  local results = require("gotests.utils").split(gofile, sep)
+  local test_filename = results[#results]:gsub("%.", "_test.")
+  return test_filename
 end
 
 local new_gotests_extra = function()
@@ -52,7 +57,7 @@ end
 local new_gotests_args = function(parallel)
   local test_template = ut.GO_NVIM_CFG.test_template or ""
   local test_template_dir = ut.GO_NVIM_CFG.test_template_dir or ""
-  local args = { gotests }
+  local args = {}
   if parallel then
     table.insert(args, "-parallel")
   end
@@ -91,11 +96,11 @@ ut.fun_test = function(parallel)
 
   local extra = new_gotests_extra()
   if type(funame) == "string" and #funame ~= 0 then
-  	if string.match(string.sub(funame, 1, 1), "%u") then
-		extra["test_funame"] = "Test" .. funame
-  	else
-		extra["test_funame"] = "Test_" .. funame
-  	end
+    if string.match(string.sub(funame, 1, 1), "%u") then
+      extra["test_funame"] = "Test" .. funame
+    else
+      extra["test_funame"] = "Test_" .. funame
+    end
   end
 
   add_test(args, extra)
