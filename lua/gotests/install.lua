@@ -24,11 +24,12 @@ local tools = {}
 for tool, _ in pairs(url) do
   table.insert(tools, tool)
 end
+
 local function is_installed(bin)
   local env_path = os.getenv("PATH")
   local base_paths = vim.split(env_path, ":", true)
 
-  for key, value in pairs(base_paths) do
+  for _, value in pairs(base_paths) do
     if uv.fs_stat(value .. DIR_SEP .. bin) then
       return true
     end
@@ -83,13 +84,13 @@ local function update(bin)
 end
 
 local function install_all()
-  for key, value in pairs(url) do
+  for key, _ in pairs(url) do
     install(key)
   end
 end
 
 local function update_all()
-  for key, value in pairs(url) do
+  for key, _ in pairs(url) do
     update(key)
   end
 end
